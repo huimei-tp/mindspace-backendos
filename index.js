@@ -488,7 +488,7 @@ app.put('/api/users/:id/reflections', async (req, res) => {
 
 
 // ------------------- Start Server -------------------
-const port = 8000;
+const port = 8080;
 app.listen(port, () =>
   console.log(`API server running on port ${port}`)
 );
