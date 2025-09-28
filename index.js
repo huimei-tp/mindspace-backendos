@@ -3,6 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const { nvidiaService } = require('./nvidiaService');
+const axios = require('axios');
 
 const app = express();
 app.use(cors());
@@ -25,7 +27,10 @@ const pool = mysql.createPool({
 
 // ------------------- AUTH & USER -------------------
 
-// Register new user
+app.get('/api/hello', (req, res) => {
+  res.json({ message: 'welcome to mindspace' });
+});
+
 // Register new user
 app.post('/api/users/register', async (req, res) => {
   const conn = await pool.getConnection();
@@ -486,6 +491,69 @@ app.put('/api/users/:id/reflections', async (req, res) => {
   }
 });
 
+// ------------------- AI FEATURES -------------------
+
+// Moderation
+app.post('/api/ai/moderate', async (req, res) => {
+  try {
+    const { text, type } = req.body;
+    const result = await nvidiaService.moderateForumContent(text, type || 'post');
+    res.json(result);
+  } catch (err) {
+    console.error('Moderation API error:', err);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
+// Translation
+app.post('/api/ai/translate', async (req, res) => {
+  try {
+    const { text, targetLanguage } = req.body;
+    const result = await nvidiaService.translateForumPost(text, targetLanguage);
+    res.json(result);
+  } catch (err) {
+    console.error('Translation API error:', err);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
+// Event Recommendations
+app.post('/api/ai/recommend-events', async (req, res) => {
+  try {
+    const { childProfile, availableEvents, preferences } = req.body;
+    const result = await nvidiaService.recommendEvents(childProfile, availableEvents, preferences);
+    res.json(result);
+  } catch (err) {
+    console.error('Event Recommendation API error:', err);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
+// Calendar Analysis & Breaks
+app.post('/api/ai/analyze-calendar', async (req, res) => {
+  try {
+    const { calendarEvents, currentTime } = req.body;
+    const result = await nvidiaService.analyzeCalendarAndRecommendBreaks(
+      calendarEvents,
+      currentTime ? new Date(currentTime) : new Date()
+    );
+    res.json(result);
+  } catch (err) {
+    console.error('Calendar Analysis API error:', err);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
+// Health check
+app.get('/api/ai/health', async (req, res) => {
+  try {
+    const result = await nvidiaService.healthCheck();
+    res.json(result);
+  } catch (err) {
+    console.error('Health check error:', err);
+    res.status(500).json({ error: 'server error' });
+  }
+});
 
 // ------------------- Start Server -------------------
 const port = 8080;
